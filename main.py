@@ -9,17 +9,19 @@ def calculate_discounted_value_with_inflation(credit_price, inflation_rate, peri
         discount += installment / (monthly_inflation_rate ** period)
     return discount
 
-def calculate_capital_yield(credit_price, annual_yield, periods):
+def calculate_capital_yield(credit_price, annual_yield, inflation_rate, periods):
     # Calculate the present value discount of the price bought with credit, considering inflation and periods (installments)
     installment = credit_price / periods
     monthly_yield = ((1 + annual_yield / 100) ** (1 / 12))
+    monthly_inflation_rate = ((1 + inflation_rate / 100) ** (1 / 12))
     remaining_capital = credit_price
-    yield_amount = 0
-    for _ in range(periods):
-        yield_amount += remaining_capital * (monthly_yield - 1)
+    yield_amount_discounted = 0
+    for period in range(periods):
+        yield_amount = remaining_capital * (monthly_yield - 1)
+        yield_amount_discounted += yield_amount / (monthly_inflation_rate ** period)
         remaining_capital *= monthly_yield
         remaining_capital -= installment 
-    return yield_amount
+    return yield_amount_discounted
 
 def calculate_interest_rate(credit_price, cash_price, periods):
     # Calculate the credit interest rate
@@ -48,15 +50,15 @@ def main():
     discounted_value = calculate_discounted_value_with_inflation(credit_price, annual_inflation, periods)
     
     # Calculate potential yields from idle capital (not spent on credit)
-    yield_amount = calculate_capital_yield(credit_price, annual_yield, periods)
+    yield_amount_discounted = calculate_capital_yield(credit_price, annual_yield, annual_inflation, periods)
 
     # Format monetary values
     cash_price_format = locale.currency(cash_price, grouping=True)
     credit_price_format = locale.currency(credit_price, grouping=True)
     installment_format = locale.currency(credit_price / periods, grouping=True)
     discounted_value_format = locale.currency(discounted_value, grouping=True)
-    yield_amount_format = locale.currency(yield_amount, grouping=True)
-    final_cost_format = locale.currency(discounted_value - yield_amount, grouping=True)
+    yield_amount_format = locale.currency(yield_amount_discounted, grouping=True)
+    final_cost_format = locale.currency(discounted_value - yield_amount_discounted, grouping=True)
 
     # Print results
     print("\nInformation about the credit purchase:")
@@ -72,7 +74,7 @@ def main():
     print("Credit interest rate (%):", "{:.2f}%".format(credit_interest_rate))
     print("")
     print("The discounted present value of the purchase with credit, considering inflation is:", discounted_value_format)
-    print("The total yield earned is:", yield_amount_format)
+    print("The total discounted yield earned is:", yield_amount_format)
     print("Real final cost:", final_cost_format)
 
 if __name__ == "__main__":
